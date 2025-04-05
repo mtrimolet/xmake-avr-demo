@@ -2,20 +2,52 @@ add_rules("mode.debug", "mode.release")
 
 set_languages("c++latest")
 
+option("avr", {default = "/usr"})
+
 set_warnings("allextra", "error")
 set_symbols("hidden")
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
+
+toolchain("llvm-avr")
+    set_kind("standalone")
+    set_homepage("https://llvm.org/")
+    set_description("A collection of modular and reusable compiler and toolchain technologies")
+
+    set_toolset("cc",     "clang")
+    set_toolset("cxx",    "clang", "clang++")
+    set_toolset("mxx",    "clang", "clang++")
+    set_toolset("mm",     "clang")
+    set_toolset("cpp",    "clang -E")
+    set_toolset("as",     "clang")
+    set_toolset("ld",     "avr-g++", "avr-gcc")
+    set_toolset("sh",     "avr-g++", "avr-gcc")
+    set_toolset("ar",     "llvm-ar")
+    set_toolset("strip",  "llvm-strip")
+    set_toolset("ranlib", "llvm-ranlib")
+    set_toolset("objcopy","llvm-objcopy", "avr-objcopy")
+    set_toolset("mrc",    "llvm-rc")
+
+    on_load(function (toolchain)
+        local march = {"--target=avr", "--gcc-toolchain=" .. get_config("avr"), "-isystem", path.join(get_config("avr"), "avr", "include"), "--sysroot=" .. path.join(get_config("avr"), "avr"), "-mmcu=atmega2560"}
+        toolchain:add("cxflags", table.unwrap(march))
+        toolchain:add("mxflags", table.unwrap(march))
+        toolchain:add("asflags", table.unwrap(march))
+        toolchain:add("ldflags", "-Wl,--gc-sections", "-mmcu=atmega2560")
+        toolchain:add("shflags", "-Wl,--gc-sections", "-mmcu=atmega2560")
+
+        toolchain:add("defines", "__DELAY_BACKWARD_COMPATIBLE__", "F_CPU=8000000")
+    end)
+toolchain_end()
 
 target("avr-demo")
     set_kind("binary")
 
     set_optimize("smallest")
 
-    set_toolchains("cross")
-    add_cxflags("gcc::-ffunction-sections", "gcc::-fdata-sections", "-mmcu=atmega2560")
-    add_ldflags("-Wl,--gc-sections", "-mmcu=atmega2560")
-
-    add_defines("F_CPU=8000000")
+    set_plat("cross")
+    set_toolchains("llvm-avr")
+    add_cxflags("-ffunction-sections", "-fdata-sections", {force = true})
+    add_ldflags("-Wl,--gc-sections", {force = true})
 
     add_files("src/**.mpp")
     add_files("src/*.cpp")
