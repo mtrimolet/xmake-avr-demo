@@ -1,0 +1,16 @@
+module;
+#include <avr/io.h>
+#include <util/delay.h>
+
+export module blink;
+
+export namespace blink {
+inline constexpr auto run() noexcept -> decltype(auto) {
+  DDRB |=  (1 << DDB7); // output to PB7
+
+  for (;;) {
+    PORTB |=  (1 << PB7); _delay_ms(500.0);
+    PORTB &= ~(1 << PB7); _delay_ms(500.0);
+  }
+}
+};

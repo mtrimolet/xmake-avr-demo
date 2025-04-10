@@ -1,0 +1,38 @@
+module;
+#include <avr/io.h>
+#include <util/delay.h>
+
+export module pwm_test;
+
+export namespace pwm_test {
+
+inline constexpr auto setup() noexcept -> decltype(auto) {
+  // Data Direction (off/0: input, on/1: output)
+  DDRB |=  (1 << DDB7); // output to PB7/OC0A/OC1C
+
+  TCCR0A = (0b10 << COM0A0) // set non-inverting mode
+        //  | (0b00 << COM0B0)
+         | (0b11 << WGM00); // set fast PWM Mode
+  TCCR0B = (0b0 << FOC0A)   // force output compare (set to 0 when using PWM)
+         | (0b0 << FOC0B)   // ...
+         | (0b0 << WGM02)   // set fast PWM Mode
+         | (0b010 << CS00); // set prescaler to 8 and starts PWM
+}
+
+inline constexpr auto run() noexcept -> decltype(auto) {
+  setup();
+
+  PORTB |=  (1 << PB7);
+  auto rate = OCR0A;
+  auto decr = false;
+  for (;;
+    OCR0A = (decr = rate <= 0 ? false 
+                  : rate >= 0xff ? true 
+                  : decr)
+          ? --rate
+          : ++rate
+  ) {
+    _delay_ms(10.0);
+  }
+}
+};

@@ -1,0 +1,57 @@
+module;
+#include <avr/io.h>
+#include <util/delay.h>
+
+export module adc_pwm;
+
+export namespace adc_pwm {
+
+inline constexpr auto setup() noexcept -> decltype(auto) {
+  // Data Direction (off/0: input, on/1: output)
+  DDRF &= ~(1 << DDF0); //  input from ADC0
+  DDRB |=  (1 << DDB7); // output   to PB7
+
+  // Digital Input Disable
+  DIDR0 |=  (1 << ADC0D); // Disable digital register connected to ADC0
+  
+  // ADC Multiplexer Selection
+  ADMUX = (0b01 << REFS0)     // Use AVCC as reference (add a capacitor between AREF and GND)
+        | (0b1 << ADLAR)      // Justify left (such that ADCH captures the 8 most significant bits)
+        | (0b00000 << MUX0);  // Select ADC7 as Single Ended Input
+  ADCSRB &= ~(1 << MUX5);     // ...
+
+  // ADC Control and Status
+  ADCSRA = (0b1 << ADEN)      // Enable the ADC
+        //  | (0b0 << ADSC)      // ADC Start Conversion (ignored if zero)
+        //  | (0b0 << ADATE)     // Disable auto-trigger
+        //  | (0b0 << ADIF)      // ADC Interrupt Flag (ignored if zero)
+        //  | (0b0 << ADIE)      // Disable interrupt
+         | (0b111 << ADPS0);  // Set prescaler division factor to max value (128)
+
+  // Timer/Counter Control
+  TCCR0A = (0b10 << COM0A0) // set non-inverting mode
+         //  | (0b00 << COM0B0)
+         | (0b11 << WGM00); // set fast PWM Mode
+  TCCR0B = (0b0 << FOC0A)  // force output compare (set to 0 when using PWM)
+         | (0b0 << FOC0B)   // ...
+         | (0b0 << WGM02)   // set fast PWM Mode
+         | (0b010 << CS00); // set prescaler to 8 and starts PWM
+}
+
+inline constexpr auto get_ADC0() noexcept -> decltype(auto) {
+  ADCSRA |= (1 << ADSC);          // Start an ADC conversion
+  while(ADCSRA & (1 << ADSC)) {}  // Wait for ADC completion
+  auto value = ADCH;     // Get 8 msb of conversion result 
+  return value;
+}
+
+inline constexpr auto run() noexcept -> decltype(auto) {
+  setup();
+
+  PORTB |=  (1 << PB7);
+
+  for (;;) {
+    OCR0A = get_ADC0();
+  }
+}
+};

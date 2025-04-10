@@ -1,14 +1,7 @@
-#include <avr/io.h>
-#include <util/delay.h>
+import adc_pwm;
 
 auto main(void) noexcept -> int {
-  DDRB |= (1 << DDB7);
-  
-  for (;;) {
-    PORTB |= (1 << PB7);
-    _delay_ms(500);
-    PORTB &= ~(1 << PB7);
-    _delay_ms(500);
-  }
+  adc_pwm::run();
+
   return 0;
 }
