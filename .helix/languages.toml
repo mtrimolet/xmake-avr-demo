@@ -1,0 +1,13 @@
+[[language]]
+name = "cpp"
+formatter = { command = "/usr/local/opt/llvm/bin/clang-format", args = ["--style=file", "-i"] }
+language-servers = ["clangd"]
+file-types = ["cpp", "mpp", "cppm", "ixx", "cc", "cxx", "hpp"]
+
+[language-server.clangd]
+command = "/usr/local/opt/llvm/bin/clangd"
+args = [
+  "--header-insertion=never",
+  "--compile-commands-dir=.vscode",
+  "-query-driver=/usr/local/opt/avr-gcc@14/bin/avr-g++"
+]
