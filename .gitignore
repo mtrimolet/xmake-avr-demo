@@ -1,5 +1,6 @@
 # Local dev environment
 .luarc.json
+.avrduderc
 
 # Xmake cache
 .xmake/

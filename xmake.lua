@@ -3,6 +3,7 @@ add_rules("mode.debug", "mode.release")
 set_languages("c++latest")
 
 option("avr", {default = "/usr"})
+option("mcu", {default = "atmega2560"})
 
 set_warnings("allextra", "error")
 set_symbols("hidden")
@@ -28,12 +29,12 @@ toolchain("llvm-avr")
     set_toolset("mrc",    "llvm-rc")
 
     on_load(function (toolchain)
-        local march = {"--target=avr", "--gcc-toolchain=" .. get_config("avr"), "-isystem", path.join(get_config("avr"), "avr", "include"), "--sysroot=" .. path.join(get_config("avr"), "avr"), "-mmcu=atmega2560"}
+        local march = {"--target=avr", "--gcc-toolchain=" .. get_config("avr"), "-isystem", path.join(get_config("avr"), "avr", "include"), "--sysroot=" .. path.join(get_config("avr"), "avr"), "-mmcu="..get_config("mcu")}
         toolchain:add("cxflags", table.unwrap(march))
         toolchain:add("mxflags", table.unwrap(march))
         toolchain:add("asflags", table.unwrap(march))
-        toolchain:add("ldflags", "-Wl,--gc-sections", "-mmcu=atmega2560")
-        toolchain:add("shflags", "-Wl,--gc-sections", "-mmcu=atmega2560")
+        toolchain:add("ldflags", "-Wl,--gc-sections", "-mmcu="..get_config("mcu"))
+        toolchain:add("shflags", "-Wl,--gc-sections", "-mmcu="..get_config("mcu"))
 
         toolchain:add("defines", "__DELAY_BACKWARD_COMPATIBLE__", "F_CPU=8000000")
     end)
@@ -76,5 +77,5 @@ target("avr-demo")
         local avrdude = find_tool("avrdude")
         assert(avrdude, "unable to find tool avrdude")
         progress.show(100, "${color.build.target}Uploading rom file")
-        os.vrunv(avrdude.program, {"-c", "stk500v2", "-P", "/dev/cu.usbmodem142101", "-p", "atmega2560", "-U", "flash:w:"..target:targetfile()..".ihex:i"})
+        os.vrunv(avrdude.program, {"-p", get_config("mcu"), "-C", "+.avrduderc", "-U", "flash:w:"..target:targetfile()..".ihex:i"})
     end)

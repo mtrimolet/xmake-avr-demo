@@ -1,0 +1,2 @@
+default_programmer = <avrdude -c?>;
+default_serial = <"/dev/path.to.programmer.serial">;
